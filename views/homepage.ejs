@@ -9,9 +9,19 @@
       <h1>Welcome to e28886.</h1>
       <p>Create a new account to access the platform.</p>
 
-      <fieldset>
-        <legend>Sign Up</legend>
-        <form action="#">
+      <% if(errors.length > 0) { %>
+      <p><mark>Errors:</mark></p>
+      <ul>
+        <% errors.forEach((error) => { %>
+        <li><%= error %></li>
+        <% }) %>
+      </ul>
+      <% } %>
+
+      <form action="/register" method="POST">
+        <fieldset>
+          <legend>Sign Up</legend>
+
           <label for="username">Username</label>
           <input
             type="text"
@@ -29,15 +39,10 @@
           <br />
 
           <button type="submit">Sign Up</button>
-        </form>
-      </fieldset>
+        </fieldset>
+      </form>
     </main>
 
-    <footer>
-      <p>
-        Copyright &copy;
-        <a href="https://wakati.tech" target="_blank">Wakati</a>
-      </p>
-    </footer>
+    <%- include('includes/footer') %>
   </body>
 </html>
