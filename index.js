@@ -11,6 +11,9 @@ app.use(function (req, res, next) {
   next();
 });
 
+const users = {};
+
+// MARK: Routes
 app.get("/", (req, res) => {
   res.render("homepage");
 });
@@ -54,9 +57,19 @@ app.post("/register", (req, res) => {
     return res.render("homepage", { errors });
   }
 
-  console.log(errors);
+  users[username] = password;
 
-  res.send("On the register route");
+  res.send(`User registration complete: ${username}`);
+});
+
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (users[username] === password) {
+    res.send("You are now logged in!");
+  } else {
+    res.send("Login failed");
+  }
 });
 
 app.listen(3000, () => {
