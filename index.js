@@ -1,9 +1,28 @@
+console.clear();
 const express = require("express");
+const db = require("better-sqlite3")("database.db");
+db.pragma("journal_mode = WAL"); // Performance
 
 const app = express();
 app.set("view engine", "ejs"); // Setting ejs for templates
 app.use(express.static("public")); // Adding public dir
 app.use(express.urlencoded({ extended: false })); // Parse Form Data
+
+// Database Setup
+const createTables = db.transaction(() => {
+  // Create users table
+  db.prepare(
+    `
+    CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username STRING NOT NULL UNIQUE,
+    password STRING NOT NULL
+    )
+    `
+  ).run();
+});
+
+createTables();
 
 app.use(function (req, res, next) {
   res.locals.errors = [];
@@ -57,7 +76,12 @@ app.post("/register", (req, res) => {
     return res.render("homepage", { errors });
   }
 
-  users[username] = password;
+  // Add user to the database
+  const query = db.prepare(
+    `INSERT INTO users (username, password) VALUES (?, ?)`
+  );
+
+  query.run(username, password);
 
   res.send(`User registration complete: ${username}`);
 });
@@ -65,11 +89,7 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  if (users[username] === password) {
-    res.send("You are now logged in!");
-  } else {
-    res.send("Login failed");
-  }
+  // TODO: Check in database
 });
 
 app.listen(3000, () => {
