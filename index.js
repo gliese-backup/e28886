@@ -1,5 +1,6 @@
 console.clear();
 const express = require("express");
+const bcrypt = require("bcrypt");
 const db = require("better-sqlite3")("database.db");
 db.pragma("journal_mode = WAL"); // Performance
 
@@ -77,6 +78,9 @@ app.post("/register", (req, res) => {
   }
 
   // Add user to the database
+  const salt = bcrypt.genSaltSync(10);
+  password = bcrypt.hashSync(password, salt);
+
   const query = db.prepare(
     `INSERT INTO users (username, password) VALUES (?, ?)`
   );
@@ -87,9 +91,20 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
+  console.log("POST REQUEST TO LOGIN");
   const { username, password } = req.body;
 
   // TODO: Check in database
+  const query = db.prepare(`SELECT * FROM users WHERE USERNAME = ?`);
+  const userInDB = query.get(username);
+
+  console.log(userInDB);
+
+  if (!userInDB) {
+    return res.send("Bhai user nhi mila");
+  }
+
+  return res.send(userInDB.password);
 });
 
 app.listen(3000, () => {
