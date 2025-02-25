@@ -1,4 +1,6 @@
 console.clear();
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const express = require("express");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
@@ -33,7 +35,14 @@ app.use(function (req, res, next) {
   res.locals.errors = [];
 
   // TODO: Read Incoming Cookies
-  console.log(req.cookies);
+  // console.log(req.cookies.user);
+  try {
+    const decoded = jwt.verify(req.cookies.user, process.env.JWTSECRET);
+
+    console.log(decoded);
+  } catch (err) {
+    console.log("The token value is not correct");
+  }
 
   next();
 });
@@ -98,8 +107,10 @@ app.post("/register", (req, res) => {
   const findStatement = db.prepare(`SELECT * FROM users WHERE ROWID = ?`);
   const ourUser = findStatement.get(result.lastInsertRowid);
 
+  const tokenValue = jwt.sign(ourUser.id, process.env.JWTSECRET);
+
   // Send a cookie back to the client
-  res.cookie("user", ourUser.id, {
+  res.cookie("user", tokenValue, {
     httpOnly: true, // Only for server
     secure: true, // Runs on only https connection
     sameSite: "strict", // CSRF Attacks but not for subdomains
