@@ -1,6 +1,8 @@
 console.clear();
 const express = require("express");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+
 const db = require("better-sqlite3")("database.db");
 db.pragma("journal_mode = WAL"); // Performance
 
@@ -8,6 +10,7 @@ const app = express();
 app.set("view engine", "ejs"); // Setting ejs for templates
 app.use(express.static("public")); // Adding public dir
 app.use(express.urlencoded({ extended: false })); // Parse Form Data
+app.use(cookieParser());
 
 // Database Setup
 const createTables = db.transaction(() => {
@@ -25,8 +28,12 @@ const createTables = db.transaction(() => {
 
 createTables();
 
+// Middleware
 app.use(function (req, res, next) {
   res.locals.errors = [];
+
+  // TODO: Read Incoming Cookies
+  console.log(req.cookies);
 
   next();
 });
@@ -85,7 +92,19 @@ app.post("/register", (req, res) => {
     `INSERT INTO users (username, password) VALUES (?, ?)`
   );
 
-  query.run(username, password);
+  const result = query.run(username, password);
+
+  // Get the recently created user
+  const findStatement = db.prepare(`SELECT * FROM users WHERE ROWID = ?`);
+  const ourUser = findStatement.get(result.lastInsertRowid);
+
+  // Send a cookie back to the client
+  res.cookie("user", ourUser.id, {
+    httpOnly: true, // Only for server
+    secure: true, // Runs on only https connection
+    sameSite: "strict", // CSRF Attacks but not for subdomains
+    maxAge: 1000 * 60 * 60 * 24 * 7, // Valid for a day
+  });
 
   res.send(`User registration complete: ${username}`);
 });
