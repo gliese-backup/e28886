@@ -1,12 +1,15 @@
 console.clear();
 require("dotenv").config();
-const jwt = require("jsonwebtoken");
+
 const express = require("express");
-const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 const db = require("better-sqlite3")("database.db");
 db.pragma("journal_mode = WAL"); // Performance
+
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.set("view engine", "ejs"); // Setting ejs for templates
@@ -30,28 +33,31 @@ const createTables = db.transaction(() => {
 
 createTables();
 
-// Middleware
+// Global Middleware: Implement Auth
 app.use(function (req, res, next) {
-  res.locals.errors = [];
+  res.locals.errors = []; // For ejs templates
 
-  // TODO: Read Incoming Cookies
-  // console.log(req.cookies.user);
   try {
     const decoded = jwt.verify(req.cookies.user, process.env.JWTSECRET);
-
-    console.log(decoded);
+    req.user = decoded.user; // give access to every route
   } catch (err) {
-    console.log("The token value is not correct");
+    req.user = false;
   }
+
+  res.locals.user = req.user; // access from templates
+  console.log(req.user);
 
   next();
 });
 
-const users = {};
-
 // MARK: Routes
 app.get("/", (req, res) => {
-  res.render("homepage");
+  if (req.user) {
+    // TODO: Show research papers on dashboard
+    return res.render("dashboard");
+  }
+
+  return res.render("homepage");
 });
 
 app.get("/login", (req, res) => {
@@ -63,6 +69,9 @@ app.post("/register", (req, res) => {
   const errors = [];
 
   username = username.trim();
+
+  if (typeof username !== "string") username = "";
+  if (typeof password !== "string") password = "";
 
   // Validation: Username
   if (!username) {
@@ -76,6 +85,15 @@ app.post("/register", (req, res) => {
   }
   if (username && !username.match(/^[a-zA-Z0-9]+$/)) {
     errors.push("Username can not contain special characters");
+  }
+  // Check if username already there in the database
+  const usernameExistsStatement = db.prepare(
+    `SELECT * FROM users WHERE username = ?`
+  );
+  const usernameExists = usernameExistsStatement.get(username);
+
+  if (usernameExists) {
+    errors.push("User is already registered");
   }
 
   // Validation: Password
@@ -107,36 +125,62 @@ app.post("/register", (req, res) => {
   const findStatement = db.prepare(`SELECT * FROM users WHERE ROWID = ?`);
   const ourUser = findStatement.get(result.lastInsertRowid);
 
-  const tokenValue = jwt.sign(ourUser.id, process.env.JWTSECRET);
+  // Send back a JWT token
+  const tokenValue = jwt.sign(
+    { user: ourUser.id, exp: Date.now() / 1000 + 60 * 60 * 24 },
+    process.env.JWTSECRET
+  );
 
   // Send a cookie back to the client
   res.cookie("user", tokenValue, {
     httpOnly: true, // Only for server
     secure: true, // Runs on only https connection
     sameSite: "strict", // CSRF Attacks but not for subdomains
-    maxAge: 1000 * 60 * 60 * 24 * 7, // Valid for a day
+    maxAge: 1000 * 60 * 60 * 24, // Valid for a week
   });
 
   res.send(`User registration complete: ${username}`);
 });
 
+// TODO: Add login functionality
 app.post("/login", (req, res) => {
-  console.log("POST REQUEST TO LOGIN");
   const { username, password } = req.body;
 
-  // TODO: Check in database
-  const query = db.prepare(`SELECT * FROM users WHERE USERNAME = ?`);
-  const userInDB = query.get(username);
+  const errors = [];
+
+  if (typeof username !== "string") username = "";
+  if (typeof password !== "string") password = "";
+
+  if (!username || !password) {
+    errors.push("Invalid Username or Password");
+  }
+
+  if (errors.length) {
+    return res.render("login", { errors });
+  }
+
+  const userInDBStatement = db.prepare(
+    `SELECT * FROM users WHERE USERNAME = ?`
+  );
+  const userInDB = query.get(userInDBStatement);
 
   console.log(userInDB);
 
   if (!userInDB) {
-    return res.send("Bhai user nhi mila");
+    return res.render("login", { errors: ["User not found"] });
   }
 
-  return res.send(userInDB.password);
+  // Check password comparison
+  const passwordCheck = bcrypt.compare(password, userInDB.password);
+  if (!passwordCheck) {
+    return res.render("login", { errors: ["Invalid username/password"] });
+  }
+
+  // TODO: Send a JWT Token
+
+  return res.redirect("/");
 });
 
-app.listen(3000, () => {
+app.listen(PORT, () => {
   console.log("Server fired up 🔥");
 });
