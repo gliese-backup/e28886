@@ -4,9 +4,18 @@
   <body>
     <%- include('includes/header') %>
 
-    <!-- TODO: Handle errors -->
-
     <main>
+    <!-- Render errors -->
+
+      <% if(errors.length > 0) { %>
+      <p><mark>Errors:</mark></p>
+      <ul>
+        <% errors.forEach((error) => { %>
+        <li><%= error %></li>
+        <% }) %>
+      </ul>
+      <% } %>
+
       <form action="/login" method="POST">
         <fieldset>
           <legend>Log In</legend>

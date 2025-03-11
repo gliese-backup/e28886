@@ -183,8 +183,9 @@ app.post("/login", (req, res) => {
   const passwordCheck = bcrypt.compareSync(password, userInDB.password);
   console.log("Password check", passwordCheck);
   if (!passwordCheck) {
-    // return res.render("login", { errors: ["Invalid username/password"] });
-    return res.send("Invalid credentials");
+    errors = ["Invalid username/password"];
+
+    return res.render("login", { errors });
   }
 
   // Send back a JWT token
