@@ -49,7 +49,6 @@ app.use(function (req, res, next) {
   }
 
   res.locals.user = req.user; // access from templates
-  console.log(req.user);
 
   next();
 });
@@ -182,7 +181,6 @@ app.post("/login", (req, res) => {
 
   // Check password comparison
   const passwordCheck = bcrypt.compareSync(password, userInDB.password);
-  console.log("Password check", passwordCheck);
   if (!passwordCheck) {
     errors = ["Invalid username/password"];
 
