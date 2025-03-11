@@ -5,6 +5,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const sanitizeHTML = require("sanitize-html");
 
 const db = require("better-sqlite3")("database.db");
 db.pragma("journal_mode = WAL"); // Performance
@@ -216,8 +217,53 @@ app.get("/logout", (req, res) => {
 });
 
 // --- Paper
-app.get("/create-paper", (req, res) => {
+function mustBeLoggedIn(req, res, next) {
+  // comes from global middleware
+  if (req.user) {
+    next();
+  }
+
+  return res.redirect("/");
+}
+
+// Paper html validtion
+function postValidation(req) {
+  let errors = [];
+
+  if (typeof req.body.title !== "string") req.body.title = "";
+  if (typeof req.body.body !== "string") req.body.body = "";
+
+  // Clean HTML Part
+  req.body.title = sanitizeHTML(req.body.title, {
+    allowedTags: ["b", "i", "em", "strong", "a", "p"],
+    allowedAttributes: {
+      a: ["href"],
+    },
+  });
+  req.body.body = sanitizeHTML(req.body.body, {
+    allowedTags: ["b", "i", "em", "strong", "a", "p"],
+    allowedAttributes: {
+      a: ["href"],
+    },
+  });
+
+  if (!req.body.title) errors.push("Title must not be empty");
+  if (!req.body.body) errors.push("Body must not be empty");
+
+  return errors;
+}
+
+app.get("/create-paper", mustBeLoggedIn, (req, res) => {
   return res.render("create-paper");
+});
+
+app.post("/create-paper", mustBeLoggedIn, (req, res) => {
+  // we will get title and body from the post request
+  const errors = postValidation(req);
+
+  console.log(req.body);
+
+  res.send("OK");
 });
 
 app.listen(PORT, () => {
