@@ -39,7 +39,10 @@ app.use(function (req, res, next) {
 
   try {
     const decoded = jwt.verify(req.cookies.user, process.env.JWTSECRET);
-    req.user = decoded.user; // give access to every route
+
+    const { userId, username } = decoded;
+
+    req.user = { userId, username }; // give access to every route
   } catch (err) {
     req.user = false;
   }
@@ -51,6 +54,7 @@ app.use(function (req, res, next) {
 });
 
 // MARK: Routes
+// --- Home
 app.get("/", (req, res) => {
   if (req.user) {
     // TODO: Show research papers on dashboard
@@ -60,10 +64,7 @@ app.get("/", (req, res) => {
   return res.render("homepage");
 });
 
-app.get("/login", (req, res) => {
-  res.render("login");
-});
-
+// --- Register
 app.post("/register", (req, res) => {
   let { username, password } = req.body;
   const errors = [];
@@ -127,7 +128,11 @@ app.post("/register", (req, res) => {
 
   // Send back a JWT token
   const tokenValue = jwt.sign(
-    { user: ourUser.id, exp: Date.now() / 1000 + 60 * 60 * 24 },
+    {
+      userId: ourUser.id,
+      username: username,
+      exp: Date.now() / 1000 + 60 * 60 * 24,
+    },
     process.env.JWTSECRET
   );
 
@@ -142,11 +147,14 @@ app.post("/register", (req, res) => {
   res.send(`User registration complete: ${username}`);
 });
 
-// TODO: Add login functionality
+// --- Login
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-
-  const errors = [];
+  let errors = [];
 
   if (typeof username !== "string") username = "";
   if (typeof password !== "string") password = "";
@@ -159,28 +167,53 @@ app.post("/login", (req, res) => {
     return res.render("login", { errors });
   }
 
+  // Check for user in database
   const userInDBStatement = db.prepare(
     `SELECT * FROM users WHERE USERNAME = ?`
   );
-  const userInDB = query.get(userInDBStatement);
 
-  console.log(userInDB);
+  const userInDB = userInDBStatement.get(username);
 
   if (!userInDB) {
-    return res.render("login", { errors: ["User not found"] });
+    errors = ["User not found"];
+    return res.render("login", { errors });
   }
 
   // Check password comparison
-  const passwordCheck = bcrypt.compare(password, userInDB.password);
+  const passwordCheck = bcrypt.compareSync(password, userInDB.password);
+  console.log("Password check", passwordCheck);
   if (!passwordCheck) {
-    return res.render("login", { errors: ["Invalid username/password"] });
+    // return res.render("login", { errors: ["Invalid username/password"] });
+    return res.send("Invalid credentials");
   }
 
-  // TODO: Send a JWT Token
+  // Send back a JWT token
+  const tokenValue = jwt.sign(
+    {
+      userId: userInDB.id,
+      username: username,
+      exp: Date.now() / 1000 + 60 * 60 * 24,
+    },
+    process.env.JWTSECRET
+  );
+
+  // Send a cookie back to the client
+  res.cookie("user", tokenValue, {
+    httpOnly: true, // Only for server
+    secure: true, // Runs on only https connection
+    sameSite: "strict", // CSRF Attacks but not for subdomains
+    maxAge: 1000 * 60 * 60 * 24, // Valid for a week
+  });
 
   return res.redirect("/");
 });
 
+// Logout
+app.get("/logout", (req, res) => {
+  res.clearCookie("user");
+  return res.redirect("/");
+});
+
 app.listen(PORT, () => {
-  console.log("Server fired up 🔥");
+  console.log(`Server fired up 🔥 on PORT ${PORT}`);
 });
