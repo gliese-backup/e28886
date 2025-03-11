@@ -215,6 +215,11 @@ app.get("/logout", (req, res) => {
   return res.redirect("/");
 });
 
+// --- Paper
+app.get("/create-paper", (req, res) => {
+  return res.render("create-paper");
+});
+
 app.listen(PORT, () => {
   console.log(`Server fired up 🔥 on PORT ${PORT}`);
 });
