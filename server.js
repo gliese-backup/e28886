@@ -232,7 +232,7 @@ function postValidation(req) {
   if (typeof req.body.title !== "string") req.body.title = "";
   if (typeof req.body.body !== "string") req.body.body = "";
 
-  // Clean HTML Part
+  // Sanitize or trim HTML Part
   req.body.title = sanitizeHTML(req.body.title, {
     allowedTags: [],
     allowedAttributes: {},

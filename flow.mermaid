@@ -1,0 +1,22 @@
+graph TD
+A[User Visits Site] -->|Cookie Present?| B{Logged In?}
+B -- Yes --> C[Show dashboard.ejs]
+B -- No --> D[Show homepage.ejs with register form]
+
+D -->|Clicks Register| E[Store Hashed Password & Send Cookie]
+E --> F[Redirect to dashboard.ejs]
+
+D -->|Clicks Login| G[Show login.ejs]
+G -->|Enters Credentials| H{Valid Login?}
+H -- Yes --> I[Send Cookie & Redirect to dashboard.ejs]
+H -- No --> J[Show Error Message]
+
+C -->|Clicks Create Paper| K[Show create-paper.ejs]
+K -->|Submits Paper| L[Store Paper in DB & Redirect to single-paper.ejs]
+
+L --> M[Show single-paper.ejs]
+M -->|Is Author?| N{Show Edit/Delete Buttons}
+N -- Yes --> O[Click Edit -> Show edit-paper.ejs with pre-filled values]
+N -- No --> P[Read-only Mode]
+
+C -->|Clicks Logout| Q[Delete Cookie & Redirect to homepage.ejs]
