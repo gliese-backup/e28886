@@ -161,7 +161,7 @@ app.post("/login", (req, res) => {
   if (typeof password !== "string") password = "";
 
   if (!username || !password) {
-    errors.push("Invalid Username or Password");
+    errors.push("Must provide username & password");
   }
 
   if (errors.length) {
@@ -183,7 +183,7 @@ app.post("/login", (req, res) => {
   // Check password comparison
   const passwordCheck = bcrypt.compareSync(password, userInDB.password);
   if (!passwordCheck) {
-    errors = ["Invalid username/password"];
+    errors = ["Invalid username/password combination."];
 
     return res.render("login", { errors });
   }
@@ -234,13 +234,29 @@ function postValidation(req) {
 
   // Clean HTML Part
   req.body.title = sanitizeHTML(req.body.title, {
-    allowedTags: ["b", "i", "em", "strong", "a", "p"],
-    allowedAttributes: {
-      a: ["href"],
-    },
+    allowedTags: [],
+    allowedAttributes: {},
   });
+
   req.body.body = sanitizeHTML(req.body.body, {
-    allowedTags: ["b", "i", "em", "strong", "a", "p"],
+    allowedTags: [
+      "p",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "i",
+      "em",
+      "strong",
+      "b",
+      "a",
+      "img",
+      "ul",
+      "ol",
+      "li",
+    ],
     allowedAttributes: {
       a: ["href"],
     },
