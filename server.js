@@ -19,6 +19,7 @@ app.use(express.static("public")); // Adding public dir
 app.use(express.urlencoded({ extended: false })); // Parse Form Data
 app.use(cookieParser());
 
+// TODO: Port this to lib/db.js
 // Database Setup
 const createTables = db.transaction(() => {
   // Create users table
@@ -276,7 +277,11 @@ app.post("/create-paper", mustBeLoggedIn, (req, res) => {
   // we will get title and body from the post request
   const errors = postValidation(req);
 
-  console.log(req.body);
+  if (errors.length) {
+    return res.render("create-paper", { errors });
+  }
+
+  // TODO: Store the research paper into the db
 
   res.send("OK");
 });
