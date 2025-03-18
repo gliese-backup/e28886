@@ -1,13 +1,14 @@
 console.clear();
-require("dotenv").config();
 
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
-const sanitizeHTML = require("sanitize-html");
+import express from "express";
+import cookieParser from "cookie-parser";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import sanitizeHTML from "sanitize-html";
 
-const db = require("better-sqlite3")("database.db");
+// Database Setup
+import Database from "better-sqlite3";
+const db = new Database("database.db");
 db.pragma("journal_mode = WAL"); // Performance
 
 const PORT = process.env.PORT || 3000;
@@ -34,21 +35,21 @@ const createTables = db.transaction(() => {
 
 createTables();
 
-// Global Middleware: Implement Auth
+// Global Middleware: Auth
 app.use(function (req, res, next) {
-  res.locals.errors = []; // For ejs templates
-
   try {
     const decoded = jwt.verify(req.cookies.user, process.env.JWTSECRET);
-
     const { userId, username } = decoded;
-
     req.user = { userId, username }; // give access to every route
   } catch (err) {
     req.user = false;
   }
 
   res.locals.user = req.user; // access from templates
+
+  console.log(req.user);
+
+  res.locals.errors = []; // For ejs templates
 
   next();
 });
@@ -153,7 +154,7 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+  let { username, password } = req.body;
   let errors = [];
 
   if (typeof username !== "string") username = "";

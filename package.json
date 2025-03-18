@@ -1,19 +1,20 @@
 {
   "name": "e28886",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Publish Research Papers",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js",
-    "clear": "rm -rf database.db database.db-shm database.db-wal"
+    "dev": "node --watch --env-file=.env server.js",
+    "start": "node --env-file=.env server.js",
+    "clear": "rm -rf *.db *.db-shm *.db-wal"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^11.8.1",
+    "better-sqlite3": "^11.9.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
@@ -21,7 +22,5 @@
     "jsonwebtoken": "^9.0.2",
     "sanitize-html": "^2.14.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  }
+  "devDependencies": {}
 }
