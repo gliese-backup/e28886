@@ -5,11 +5,7 @@ import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import sanitizeHTML from "sanitize-html";
-
-// Database Setup
-import Database from "better-sqlite3";
-const db = new Database("database.db");
-db.pragma("journal_mode = WAL"); // Performance
+import { db } from "./lib/db.js";
 
 const PORT = process.env.PORT || 3000;
 
@@ -18,23 +14,6 @@ app.set("view engine", "ejs"); // Setting ejs for templates
 app.use(express.static("public")); // Adding public dir
 app.use(express.urlencoded({ extended: false })); // Parse Form Data
 app.use(cookieParser());
-
-// TODO: Port this to lib/db.js
-// Database Setup
-const createTables = db.transaction(() => {
-  // Create users table
-  db.prepare(
-    `
-    CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username STRING NOT NULL UNIQUE,
-    password STRING NOT NULL
-    )
-    `
-  ).run();
-});
-
-createTables();
 
 // Global Middleware: Auth
 app.use(function (req, res, next) {
@@ -103,10 +82,10 @@ app.post("/register", (req, res) => {
   if (!password) {
     errors.push("You must provide a password");
   }
-  if (username && username.length < 6) {
+  if (password && password.length < 6) {
     errors.push("Password must be atleast 6 characters");
   }
-  if (username && username.length > 20) {
+  if (password && password.length > 20) {
     errors.push("Password must be exceed 20 characters");
   }
 
@@ -146,7 +125,7 @@ app.post("/register", (req, res) => {
     maxAge: 1000 * 60 * 60 * 24, // Valid for a week
   });
 
-  res.send(`User registration complete: ${username}`);
+  res.redirect("/");
 });
 
 // --- Login
