@@ -5,18 +5,15 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "node --watch --env-file=.env server.js",
-    "start": "node --env-file=.env server.js",
-    "clear": "rm -rf *.db *.db-shm *.db-wal"
+    "clear": "rm -rf *.db *.db-shm *.db-wal",
+    "dev": "bun --watch server.js",
+    "start": "bun server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "better-sqlite3": "^11.9.1",
     "cookie-parser": "^1.4.7",
-    "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",

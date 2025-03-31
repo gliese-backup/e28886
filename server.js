@@ -3,11 +3,11 @@ console.clear();
 import express from "express";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+// import bcrypt from "bcrypt";
 import sanitizeHTML from "sanitize-html";
 import { db } from "./lib/db.js";
 
-const PORT = process.env.PORT || 3000;
+const PORT = Bun.env.PORT || 3000;
 
 const app = express();
 app.set("view engine", "ejs"); // Setting ejs for templates
@@ -18,7 +18,7 @@ app.use(cookieParser());
 // Global Middleware: Auth
 app.use(function (req, res, next) {
   try {
-    const decoded = jwt.verify(req.cookies.user, process.env.JWTSECRET);
+    const decoded = jwt.verify(req.cookies.user, Bun.env.JWTSECRET);
     const { userId, username } = decoded;
     req.user = { userId, username }; // give access to every route
   } catch (err) {
@@ -46,7 +46,7 @@ app.get("/", (req, res) => {
 });
 
 // --- Register
-app.post("/register", (req, res) => {
+app.post("/register", async (req, res) => {
   let { username, password } = req.body;
   const errors = [];
 
@@ -94,14 +94,16 @@ app.post("/register", (req, res) => {
   }
 
   // Add user to the database
-  const salt = bcrypt.genSaltSync(10);
-  password = bcrypt.hashSync(password, salt);
+  // const salt = bcrypt.genSaltSync(10);
+  // password = bcrypt.hashSync(password, salt);
+
+  const hashedPass = await Bun.password.hash(password);
 
   const query = db.prepare(
     `INSERT INTO users (username, password) VALUES (?, ?)`
   );
 
-  const result = query.run(username, password);
+  const result = query.run(username, hashedPass);
 
   // Get the recently created user
   const findStatement = db.prepare(`SELECT * FROM users WHERE ROWID = ?`);
@@ -114,7 +116,7 @@ app.post("/register", (req, res) => {
       username: username,
       exp: Date.now() / 1000 + 60 * 60 * 24,
     },
-    process.env.JWTSECRET
+    Bun.env.JWTSECRET
   );
 
   // Send a cookie back to the client
@@ -133,7 +135,7 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   let { username, password } = req.body;
   let errors = [];
 
@@ -161,7 +163,7 @@ app.post("/login", (req, res) => {
   }
 
   // Check password comparison
-  const passwordCheck = bcrypt.compareSync(password, userInDB.password);
+  const passwordCheck = await Bun.password.verify(password, userInDB.password);
   if (!passwordCheck) {
     errors = ["Invalid username/password combination."];
 
@@ -175,7 +177,7 @@ app.post("/login", (req, res) => {
       username: username,
       exp: Date.now() / 1000 + 60 * 60 * 24,
     },
-    process.env.JWTSECRET
+    Bun.env.JWTSECRET
   );
 
   // Send a cookie back to the client

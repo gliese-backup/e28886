@@ -1,7 +1,8 @@
-# e28886
+# TODO
 
-npm init -y
-npm install express ejs nodemon
-npm run dev
-
-https://github.com/shantanuuchak/e28886-client
+[X] Use Bun Runtime
+[X] Update start scripts
+[X] Remove dependency for dotenv flag, instead use Bun.env
+[X] Remove bcrypt dependency
+[X] Remove bettersqlite
+[] Docker file for bun
