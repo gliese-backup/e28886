@@ -260,9 +260,39 @@ app.post("/create-paper", mustBeLoggedIn, (req, res) => {
     return res.render("create-paper", { errors });
   }
 
-  // TODO: Store the research paper into the db
+  // Save to the db
+  const statement = db.prepare(
+    `INSERT INTO papers (title, body, authorid, createdDate) VALUES (?, ?, ?, ?)`
+  );
+  const result = statement.run(
+    req.body.title,
+    req.body.body,
+    req.user.userId,
+    new Date().toISOString()
+  );
 
-  res.send("OK");
+  // Redirect user to the newly published paper
+  const getPaperStatement = db.prepare(`SELECT id FROM papers WHERE ROWID = ?`);
+  const realPaper = getPaperStatement.get(result.lastInsertRowid);
+
+  res.redirect(`/paper/${realPaper.id}`);
+});
+
+app.get("/paper/:id", (req, res) => {
+  // Find the paper with this id
+  const statement = db.prepare(`SELECT * FROM papers WHERE id = ?`);
+  const paper = statement.get(req.params.id);
+
+  // If the paper is not there redirect to homepage
+  if (!paper) {
+    return res.redirect("/");
+  }
+
+  // To show edit and delete functionality
+  const isAuthor = paper.authorid === req.user.userId;
+
+  // If found, then show the details
+  return res.render("single-paper", { paper, isAuthor });
 });
 
 app.listen(PORT, () => {

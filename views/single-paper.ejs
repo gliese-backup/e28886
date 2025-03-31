@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('includes/head') %>
+  <body>
+    <%- include('includes/header') %>
+
+    <main>
+      <article>
+        <h2><%= paper.title %></h2>
+        <%= paper.body %>
+      </article>
+
+      <!-- Show them only when user is allowed -->
+      <% if(isAuthor){ %>
+      <a href="#"><button>Edit</button></a>
+      <a href="#"><button>Delete</button></a>
+      <% } %>
+    </main>
+
+    <%- include('includes/footer') %>
+  </body>
+</html>
